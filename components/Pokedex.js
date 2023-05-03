@@ -1,5 +1,6 @@
 export default {
     template: /*html*/`
+    <mi-navbar></mi-navbar>
     <div class="container mt-2">
         <div class="card">
             <div class="card-body">
@@ -9,9 +10,9 @@ export default {
                             <select id="filtro" name="filtro"
                                 class="form-select border"
                                 aria-label="Filtro"
-                                v-model="">
-                                <option disabled selected :value="null">Escoja un Tipo</option>
-                                <option v-for="(type, index) in tyoes" :key="index" :value="type.url">{{ type.name }}</option>
+                                v-model="selectedType">
+                                <option disabled :value="null" selected>Escoja un Tipo</option>
+                                <option v-for="(type, index) in types" :key="index" :value="type.url">{{ type.name }}</option>
                             </select>
                         </div>
                         <input id="valor" name="valor"
@@ -26,6 +27,12 @@ export default {
                         </button>
                     </div>
                 </form>
+                <div class="row row-cols-5">
+                    <pokemon-card 
+                        v-for="pokemon in pokemonsInfo" 
+                        :pokemon="pokemon">
+                    </pokemon-card>
+                </div>
             </div>
         </div>
     </div>
@@ -34,18 +41,29 @@ export default {
         return {
             baseUrl: 'https://pokeapi.co/api/v2/',
             types: [],
-            selectedType: '',
+            selectedType: null,
             pokemons: [],
+            pokemonsInfo: [],
             favouritePokemons: [],
         }
     },
+    // setup() {
+    //     const baseUrl= 'https://pokeapi.co/api/v2/'
+    //     const types= []
+    //     const selectedType= null
+    //     const pokemons= []
+    //     const pokemonsInfo= []
+    //     const favouritePokemons= []
+    //     return { baseUrl,types,selectedType,pokemons,pokemonsInfo,favouritePokemons }
+    // },
     mounted() {
         this.getTypes()
         this.getPokemons()
+        this.getPokemonsInfo()
     },
     methods:{
         url(filter='', value='') {
-            return `https://pokeapi.co/api/v2/${filter}/${value}`
+            return `${this.baseUrl}${filter}/${value}`
         },
         getTypes() {
             axios.get(this.url('type'))
@@ -56,6 +74,21 @@ export default {
         getPokemons(filter='pokemon', value='') {
             axios.get(this.url(filter,value))
             .then(response => console.log(response.data))
+        },
+        getPokemonsInfo() {
+           // const self = this.$data
+            // console.log('self',self)
+            fetch('https://pokeapi.co/api/v2/pokemon?limit=151')
+            .then(response => response.json())
+            .then(json => {
+                this.pokemons = json
+                this.pokemonsInfo=[]
+                json.results.forEach(pokemon => {
+                    fetch(pokemon.url)
+                    .then(response => response.json())
+                    .then(pokeData => { this.pokemonsInfo.push(pokeData) })
+                })
+            })
         }
     }
 }
