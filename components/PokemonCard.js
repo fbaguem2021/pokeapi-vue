@@ -1,5 +1,5 @@
 export default {
-    props: ['pokemon','team','favourites'],
+    props: ['pokemon','favourites','team','teamCapacity'],
     emits: ['favourite-clicked','team-clicked'],
     template: /*html*/ `
     <div class="col mt-3">
@@ -8,13 +8,13 @@ export default {
             <div class="card-footer">
                 <div class="d-flex flex-row-reverse">
                     <button
-                        @click="setFabourite()"
+                        @click="setFavourite(pokemon.name)"
                         class="btn ms-1"
-                        :class="{ 'btn-outline-danger': !isFabourite, 'btn-danger text-white': isFabourite }"
-                        ><i class="bi" :class="{ 'bi-heart': !isFabourite, 'bi-heart-fill': isFabourite }"></i>
+                        :class="{ 'btn-outline-danger': !isFavourite, 'btn-danger text-white': isFavourite }"
+                        ><i class="bi" :class="{ 'bi-heart': !isFavourite, 'bi-heart-fill': isFavourite }"></i>
                     </button>
                     <button
-                        @click="setTeamMember()"
+                        @click="setTeamMember(pokemon.name)"
                         class="btn me-1"
                         :class="{ 'btn-outline-secondary': !isTeam, 'btn-warning text-white': isTeam }"
                         ><i class="bi" :class="{ 'bi-briefcase': !isTeam, 'bi-briefcase-fill': isTeam }"></i>
@@ -26,36 +26,37 @@ export default {
     `,
     data() {
         return {
-            isFabourite: false,
+            isFavourite: false,
             isTeam: false
         }
     },
     mounted() {
-        console.log('holamundo');
+        // console.log('holamundo');
     },
     methods: {
-        setTeamMember() {
-            // this.$emit
-            // this.isTeam=!this.isTeam
+        setTeamMember(pokemon_name) {
+            this.isTeam = !this.team.includes(pokemon_name) && this.team.length < this.teamCapacity
+            const data = { name: pokemon_name, newValue: this.isTeam }
+            this.$emit('team-clicked', data)
         },
-        setFabourite() {
-            this.isFabourite=!this.isFabourite
-            const data = { name: this.pokemon.name, newValue: this.isFabourite }
+        setFavourite(pokemon_name) {
+            this.isFavourite = !this.favourites.includes(pokemon_name)
+            const data = { name: pokemon_name, newValue: this.isFavourite }
             this.$emit('favourite-clicked',data)
         }
     },
     watch: {
         favourites: {
             handler(NEW, OLD) {
-                // // this.isFabourite = this.favourites.includes(this.pokemon.name)
-                // this.isFabourite = NEW.includes(this.pokemon.name)
+                // // this.isFavourite = this.favourites.includes(this.pokemon.name)
+                // this.isFavourite = NEW.includes(this.pokemon.name)
                 // console.log(this.pokemon.name,'is charmander?',NEW.includes(this.pokemon.name))
                 let found = false
                 NEW.forEach(n => {
                     if (n == this.pokemon.name) {
                         found = true
                     }
-                    this.isFabourite = found
+                    this.isFavourite = found
                 })
             },
             immediate: true,

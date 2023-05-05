@@ -31,10 +31,13 @@ export default {
                 <div class="row row-cols-6">
                     <pokemon-card 
                         v-for="(pokemon, index) in pokemons_filtered"
-                        :key="pokemon.id"
+                        :key="pokemon.id+'-'+pokemon.name"
                         :pokemon="pokemon"
                         :favourites="favouritePokemons"
-                        :team="teamPokemons">
+                        :team="team"
+                        :team-capacity="team_capacity"
+                        @favourite-clicked="manageFavourites"
+                        @team-clicked="manageTeam">
                     </pokemon-card>
                 </div>
             </div>
@@ -48,14 +51,15 @@ export default {
             selectedType: null,
             pokemons: [],
             pokemons_filtered: [],
-            favouritePokemons: ['charmander'],
-            teamPokemons: ['bulbasaur'],
+            favouritePokemons: [],
+            team: [],
+            team_capacity: 6,
         }
     },
     mounted() {
         // console.log('holamundo');
         this.getTypes()
-        this.getPokemons()
+        this.getPokemons(15)
     },
     methods:{
         url(filter='',limit='') {
@@ -72,10 +76,26 @@ export default {
                 this.types = json.results
             })
         },
-        getPokemons() {
-            // const self = this.$data
-            // console.log('self',self)
-            // fetch('https://pokeapi.co/api/v2/pokemon?limit=151')
+        getPokemons(limit) {
+            fetch(this.url('pokemon',limit))
+            .then(response => response.json())
+            .then(json => {
+                this.pokemons=[]
+                this.pokemons_filtered=[]
+                const promises = json.results.map( pokemon => {
+                    return fetch(pokemon.url)
+                    .then(response => response.json())
+                    .then(pokeData => {
+                        this.pokemons.push(pokeData)
+                        this.pokemons_filtered.push(pokeData)
+                    })
+                })
+                Promise.all(promises).then(() => {
+                    this.pokemons_filtered.sort( (a,b) => a.id - b.id )
+                })
+            })
+        },
+        getPokemons_old() {
             fetch(this.url('pokemon',15))
             .then(response => response.json())
             .then(json => {
@@ -87,9 +107,17 @@ export default {
                     .then(pokeData => { 
                         this.pokemons.push(pokeData)
                         this.pokemons_filtered.push(pokeData)
+                        this.pokemons.sort((a,b)=>{
+                            if (a.id < b.id) {
+                                return -1
+                            }
+                            if (b.id < a.id) {
+                                return 1
+                            }
+                            return 1
+                        })
                     })
                 })
-
             })
         },
         sortPokemons() {
@@ -106,6 +134,27 @@ export default {
                 this.pokemons_filtered = this.pokemons
             }
             // this.pokemons_filtered = this.pokemons
+        },
+        manageFavourites(e) {
+            const index = this.favouritePokemons.indexOf(e.name)
+            if (index >= 0) {
+                this.favouritePokemons.splice(index, 1)
+            } else {
+                this.favouritePokemons.push(e.name)
+            }
+        },
+        manageTeam(e) {
+            const index = this.team.indexOf(e.name)
+            const inTeam = this.team.includes(e.name)
+            const freeSpace = this.team.length < this.team_capacity
+            const fullTeam = this.team.length === this.team_capacity
+
+            if (inTeam) {
+                this.team.splice(index, 1)
+            } else if (freeSpace) {
+                this.team.push(e.name)
+            } else if (fullTeam) {
+            }
         }
     }
 }
